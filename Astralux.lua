@@ -13,18 +13,13 @@ local function validateKey()
     return true
 end
 
--- Clean up loader UI first
-local function cleanupLoader()
-    for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
-        if gui.Name == "Astralux Loader" or (gui:IsA("ScreenGui") and gui.Name:match("^Astralux Loader")) then
-            gui:Destroy()
-        end
-    end
+-- Trigger loader cleanup
+if _G.LoaderEvent then
+    _G.LoaderEvent:Fire()
+    task.wait(0.2) -- Wait for cleanup to complete
+    _G.LoaderEvent:Destroy()
+    _G.LoaderEvent = nil
 end
-
--- Execute cleanup
-cleanupLoader()
-task.wait(0.1)  -- Small delay to ensure cleanup
 
 -- Check key validation before proceeding
 if not validateKey() then return end
