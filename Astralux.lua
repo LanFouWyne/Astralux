@@ -14,6 +14,7 @@ local function validateKey()
 end
 
 -- Trigger loader cleanup
+task.wait(0.2)
 if _G.LoaderEvent then
     _G.LoaderEvent:Fire()
     task.wait(0.2) -- Wait for cleanup to complete
