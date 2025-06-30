@@ -1,37 +1,8 @@
--- Key Protection System
-local validKey = "AstraluxDebest"
-local hasValidatedKey = false
-
--- Create a function to validate the key
-local function validateKey()
-    -- Check if the key was properly validated through the loader
-    if not _G.AstraluxKeyValidated or _G.AstraluxKeyValidated ~= validKey then
-        game.Players.LocalPlayer:Kick("⚠️ Please insert the correct key! Don't try to bypass it! ⚠️")
-        return false
-    end
-    hasValidatedKey = true
-    return true
+-- Key validation check
+if not _G.AstraluxKeyValidated or _G.AstraluxKeyValidated ~= "AstraluxBest" then
+    game.Players.LocalPlayer:Kick("⚠️ Please use the official loader to execute this script!")
+    return
 end
-
--- Trigger loader cleanup
-task.wait(0.2)
-if _G.LoaderEvent then
-    _G.LoaderEvent:Fire()
-    task.wait(0.2) -- Wait for cleanup to complete
-    _G.LoaderEvent:Destroy()
-    _G.LoaderEvent = nil
-end
-
--- Check key validation before proceeding
-if not validateKey() then return end
-
--- Hapus UI Loader secara paksa setelah key valid
-for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
-    if gui.Name == "Astralux Loader" or gui.Name:match("^Astralux Loader") then
-        gui:Destroy()
-    end
-end
-
 
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/LanFouWyne/Astralux/refs/heads/main/Library/Ui/AstraluxUI.lua"))()
 
