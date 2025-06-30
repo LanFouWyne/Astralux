@@ -25,6 +25,14 @@ end
 -- Check key validation before proceeding
 if not validateKey() then return end
 
+-- Hapus UI Loader secara paksa setelah key valid
+for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
+    if gui.Name == "Astralux Loader" or gui.Name:match("^Astralux Loader") then
+        gui:Destroy()
+    end
+end
+
+
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/LanFouWyne/Astralux/refs/heads/main/Library/Ui/AstraluxUI.lua"))()
 
 -- Create Main Window using x2zu UI
