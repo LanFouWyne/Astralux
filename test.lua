@@ -240,6 +240,7 @@ end
 wait(2.5)
 tweenOutAndDestroy()
 
+-- Load Astralux UI
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/LanFouWyne/Astralux/refs/heads/main/Library/Ui/AstraluxUI.lua"))()
 
 -- Create Main Window using Astralux UI
