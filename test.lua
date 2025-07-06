@@ -1,3 +1,9 @@
+--!nonstrict
+
+--[[
+	@author Jorsan
+]]
+
 -- Libraries
 local Maid = loadstring(game:HttpGet('https://raw.githubusercontent.com/Quenty/NevermoreEngine/refs/heads/main/src/maid/src/Shared/Maid.lua'))()
 local Signal = loadstring(game:HttpGet('https://raw.githubusercontent.com/stravant/goodsignal/refs/heads/master/src/init.lua'))()
@@ -236,11 +242,11 @@ tweenOutAndDestroy()
 
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/LanFouWyne/Astralux/refs/heads/main/Library/Ui/AstraluxUI.lua"))()
 
--- Create Main Window using x2zu UI
+-- Create Main Window using Astralux UI
 local Window = Library:Window({
     Title = "INK Game by Jorsan",
     Desc = "Semi-automatic",
-    Icon = 105059922903197, -- You can change this Icon ID
+    Icon = 105059922903197,
     Theme = "Dark", 
     Config = {
         Keybind = Enum.KeyCode.LeftControl,
@@ -255,381 +261,85 @@ local Window = Library:Window({
 -- Create Main Tab
 local MainTab = Window:Tab({Title = "Main", Icon = "star"})
 
-MainTab:Section({ Title = "General" })
+MainTab:Section({ Title = "Game Features" })
 
--- Toggle ESP
+-- Red Light Green Light God Mode
 MainTab:Toggle({
-    Title = "ESP",
-    Desc = "Toggle ESP for all objects (Zeni, Enemy, Items, etc)",
+    Title = "Red Light God Mode",
+    Desc = "Prevents you from being eliminated during Red Light Green Light",
     Value = false,
     Callback = function(state)
-        ESPEnabled = state
-        if state then
-            scanForObjects()
-        else
-            clearAllESP()
-        end
+        getgenv().Toggles.RedLightGodMode = state
     end
 })
 
--- Toggle ProximityBypass
+-- Glass Bridge ESP
 MainTab:Toggle({
-    Title = "Bypass Proximity Prompt",
-    Desc = "Skip Proximity Prompt",
+    Title = "Glass Bridge ESP",
+    Desc = "Shows which glass panels are safe to step on",
     Value = false,
-    Callback = function(value)
-        proximityBypassState = value
-        if proximityBypassState then
-            -- Enable bypass
-            for _, prompt in ipairs(workspace:GetDescendants()) do
-                if prompt:IsA("ProximityPrompt") then
-                    if not prompt:GetAttribute("OriginalHoldDuration") then
-                        prompt:SetAttribute("OriginalHoldDuration", prompt.HoldDuration)
-                    end
-                    prompt.HoldDuration = 0
-                end
-            end
-            
-            local connection
-            connection = workspace.DescendantAdded:Connect(function(descendant)
-                if descendant:IsA("ProximityPrompt") and proximityBypassState then
-                    if not descendant:GetAttribute("OriginalHoldDuration") then
-                        descendant:SetAttribute("OriginalHoldDuration", descendant.HoldDuration)
-                    end
-                    descendant.HoldDuration = 0
-                end
-            end)
-            
-            getgenv().ProximityBypassConnection = connection
-            
-            notify{
-                Title = "Bypass Proximity",
-                Content = "Proximity prompt bypass activated",
-                Duration = 3
-            }
-        else
-            for _, prompt in ipairs(workspace:GetDescendants()) do
-                if prompt:IsA("ProximityPrompt") then
-                    prompt.HoldDuration = prompt:GetAttribute("OriginalHoldDuration") or 1
-                    prompt:SetAttribute("OriginalHoldDuration", nil)
-                end
-            end
-            
-            if getgenv().ProximityBypassConnection then
-                getgenv().ProximityBypassConnection:Disconnect()
-                getgenv().ProximityBypassConnection = nil
-            end
-            
-            notify{
-                Title = "Bypass Proximity",
-                Content = "Proximity prompt bypass deactivated",
-                Duration = 3
-            }
-        end
+    Callback = function(state)
+        getgenv().Toggles.GlassBridgeESP = state
     end
 })
 
--- Toggle Dynamic Enemy Follow
+-- Tug of War Auto Pull
 MainTab:Toggle({
-    Title = "Follow Enemy (Hold Ofuda)",
-    Desc = "Teleport player to enemy (requires holding Ofuda)",
+    Title = "Tug of War Auto Pull",
+    Desc = "Automatically pulls during Tug of War game",
     Value = false,
-    Callback = function(value)
-        teleportToEnemyState = value
-        if teleportToEnemyState then
-            notify{
-                Title = "Follow Enemy",
-                Content = "Enemy following activated",
-                Duration = 3
-            }
-
-            task.wait(0.1)
-            local character = game.Players.LocalPlayer.Character
-            local hasOfudaEquippedOnEnable = false
-            if character then
-                for _, child in ipairs(character:GetChildren()) do
-                    if child:IsA("Tool") and (string.match(child.Name:lower(), "ofuda") or string.match(child.Name:lower(), "talisman")) then
-                        hasOfudaEquippedOnEnable = true
-                        break
-                    end
-                end
-            end
-
-            if not hasOfudaEquippedOnEnable then
-                notify{
-                    Title = "Follow Enemy",
-                    Content = "You need to equip an Ofuda!",
-                    Duration = 3
-                }
-            end
-
-            local enemyFollowLoop
-            enemyFollowLoop = game:GetService("RunService").Heartbeat:Connect(function()
-                local character = game.Players.LocalPlayer.Character
-                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-                
-                if not character or not character.Parent or not rootPart or not rootPart.Parent then
-                    return
-                end
-
-                local hasOfudaEquipped = false
-                for _, child in ipairs(character:GetChildren()) do
-                    if child:IsA("Tool") and (string.match(child.Name:lower(), "ofuda") or string.match(child.Name:lower(), "talisman")) then
-                        hasOfudaEquipped = true
-                        break
-                    end
-                end
-
-                if not hasOfudaEquipped then
-                    return
-                end
-                
-                local currentEnemy = workspace.Client.Enemy.ClientEnemy:FindFirstChild("EnemyModel")
-                
-                if not currentEnemy then
-                    currentEnemy = workspace.Server.Enemy:FindFirstChild("Enemy") or workspace:FindFirstChild("EnemyModel", true) or workspace:FindFirstChild("EnemyModels", true)
-                end
-                
-                if currentEnemy then
-                    local currentEnemyPosition
-                    local enemyLookVector
-                    local enemyHeight = 0
-                    
-                    if currentEnemy:FindFirstChild("HumanoidRootPart") then
-                        local enemyRootPart = currentEnemy.HumanoidRootPart
-                        currentEnemyPosition = enemyRootPart.Position
-                        enemyLookVector = enemyRootPart.CFrame.LookVector
-                        
-                        local humanoid = currentEnemy:FindFirstChildOfClass("Humanoid")
-                        if humanoid then
-                            enemyHeight = humanoid.HipHeight * 2
-                        end
-                    elseif typeof(currentEnemy.GetPivot) == "function" then
-                        local enemyCFrame = currentEnemy:GetPivot()
-                        currentEnemyPosition = enemyCFrame.Position
-                        enemyLookVector = enemyCFrame.LookVector
-                        
-                        if currentEnemy:IsA("Model") then
-                            enemyHeight = currentEnemy:GetExtentsSize().Y / 2
-                        end
-                    elseif currentEnemy:IsA("BasePart") then
-                        currentEnemyPosition = currentEnemy.Position
-                        enemyLookVector = currentEnemy.CFrame.LookVector
-                        enemyHeight = currentEnemy.Size.Y / 2
-                    else
-                        for _, child in pairs(currentEnemy:GetDescendants()) do
-                            if child:IsA("BasePart") and (child.Name:lower():find("head")) then
-                                currentEnemyPosition = child.Position
-                                enemyLookVector = child.CFrame.LookVector
-                                enemyHeight = child.Size.Y * 0.8
-                                break
-                            elseif child:IsA("BasePart") and (child.Name:lower():find("torso") or child.Name:lower():find("upper")) then
-                                currentEnemyPosition = child.Position
-                                enemyLookVector = child.CFrame.LookVector
-                                enemyHeight = child.Size.Y
-                                break
-                            elseif child:IsA("BasePart") and child.Name:lower():find("root") then
-                                currentEnemyPosition = child.Position
-                                enemyLookVector = child.CFrame.LookVector
-                                break
-                            end
-                        end
-                        
-                        if not currentEnemyPosition then
-                            for _, child in pairs(currentEnemy:GetDescendants()) do
-                                if child:IsA("BasePart") then
-                                    currentEnemyPosition = child.Position
-                                    enemyLookVector = child.CFrame.LookVector
-                                    enemyHeight = child.Size.Y / 2
-                                    break
-                                end
-                            end
-                        end
-                    end
-                    
-                    if enemyHeight < 1 then
-                        enemyHeight = 5
-                    end
-                    
-                    if currentEnemyPosition and enemyLookVector then
-                        local ofudaBox = workspace.Server.SpawnedItems:FindFirstChild("OfudaBox2")
-                        local isSafeToTeleport = true
-                        
-                        if ofudaBox then
-                            local ofudaBoxPosition
-                            
-                            if typeof(ofudaBox.GetPivot) == "function" then
-                                ofudaBoxPosition = ofudaBox:GetPivot().Position
-                            elseif ofudaBox:IsA("BasePart") then
-                                ofudaBoxPosition = ofudaBox.Position
-                            else
-                                for _, child in pairs(ofudaBox:GetDescendants()) do
-                                    if child:IsA("BasePart") then
-                                        ofudaBoxPosition = child.Position
-                                        break
-                                    end
-                                end
-                            end
-                            
-                            if ofudaBoxPosition then
-                                local distanceToOfudaBox = (currentEnemyPosition - ofudaBoxPosition).Magnitude
-                                if distanceToOfudaBox < 20 then
-                                    isSafeToTeleport = false
-                                    if not getgenv().WarningShown then
-                                        notify{
-                                            Title = "Warning",
-                                            Content = "Enemy is near the Ofuda Box. Waiting for the enemy to move away",
-                                            Duration = 3
-                                        }
-                                        getgenv().WarningShown = true
-                                        task.delay(5, function()
-                                            getgenv().WarningShown = false
-                                        end)
-                                    end
-                                end
-                            end
-                        end
-                        
-                        if isSafeToTeleport then
-                            local distanceFromEnemy = -25
-                            local targetPosition = currentEnemyPosition - (enemyLookVector * distanceFromEnemy)
-                            targetPosition = Vector3.new(targetPosition.X, currentEnemyPosition.Y + (enemyHeight * 0.67), targetPosition.Z)
-                            rootPart.CFrame = CFrame.new(targetPosition, currentEnemyPosition)
-                            task.wait(0.03)
-                        end
-                    end
-                end
-            end)
-            
-            getgenv().EnemyFollowLoop = enemyFollowLoop
-            
-        else
-            if getgenv().EnemyFollowLoop then
-                getgenv().EnemyFollowLoop:Disconnect()
-                getgenv().EnemyFollowLoop = nil
-            end
-            
-            notify{
-                Title = "Follow Enemy",
-                Content = "Enemy following deactivated",
-                Duration = 3
-            }
-        end
+    Callback = function(state)
+        getgenv().Toggles.TugOfWarAuto = state
     end
 })
 
-MainTab:Section({ Title = "Player Settings" })
+-- Dalgona Auto Complete
+MainTab:Toggle({
+    Title = "Dalgona Auto Complete",
+    Desc = "Automatically completes the Dalgona cookie challenge",
+    Value = false,
+    Callback = function(state)
+        getgenv().Toggles.DalgonaAuto = state
+    end
+})
 
--- Create speed slider
-MainTab:Slider({
-    Title = "Speed Mods",
-    Desc = "Change player walkspeed",
-    Value = 28,
-    Min = 16,
+-- Player Tab
+local PlayerTab = Window:Tab({Title = "Player", Icon = "user"})
+
+PlayerTab:Section({ Title = "Player Modifications" })
+
+-- WalkSpeed Toggle
+PlayerTab:Toggle({
+    Title = "Enable WalkSpeed",
+    Desc = "Toggle custom walk speed",
+    Value = false,
+    Callback = function(state)
+        getgenv().Toggles.EnableWalkSpeed = state
+    end
+})
+
+-- WalkSpeed Slider
+PlayerTab:Slider({
+    Title = "Walk Speed",
+    Desc = "Adjust player walk speed",
+    Value = 16,
+    Min = 1,
     Max = 100,
     Rounding = 0,
-    Callback = function(Value)
-        selectedSpeed = Value
-        setWalkSpeed(Value)
+    Callback = function(value)
+        getgenv().Options.WalkSpeed = value
     end
 })
 
-MainTab:Section({ Title = "⚠️ Note" })
-MainTab:Button({
-    Title = "Info",
-    Desc = "- ESP feature may be unstable\n- ESP only shown at stage 2\n- You need to equip Ofuda manually after using AutoComplete Feature",
-    Callback = function() end
-})
-
--- Auto Complete Stage 1
-MainTab:Section({ Title = "Auto Complete Stage 1" })
-
-MainTab:Button({
-    Title = "Auto Complete Stage 1",
-    Desc = "Complete all quests in stage 1",
-    Callback = function()
-        -- ... existing callback code ...
+-- NoClip Toggle
+PlayerTab:Toggle({
+    Title = "Noclip",
+    Desc = "Walk through walls",
+    Value = false,
+    Callback = function(state)
+        getgenv().Toggles.Noclip = state
     end
 })
-
--- Auto Complete Stage 2/3
-MainTab:Section({ Title = "Auto Complete Stage 2 and 3" })
-
-MainTab:Button({
-    Title = "Auto Complete Stage 2/3",
-    Desc = "Stable version that adapts to map stage changes",
-    Callback = function()
-        -- ... existing callback code ...
-    end
-})
-
--- Stage 4 Completion
-MainTab:Section({ Title = "Stage 4 Completion" })
-
-MainTab:Button({
-    Title = "Auto Complete Stage 4",
-    Desc = "Combined doll settings + finish + OldPhoto collection + Ofuda collection",
-    Callback = function()
-        -- ... existing callback code ...
-    end
-})
-
--- Stage 5 Completion
-MainTab:Section({ Title = "Stage 5 Completion" })
-
-MainTab:Button({
-    Title = "Auto Complete Stage 5",
-    Desc = "Complete the stage 5",
-    Callback = function()
-        -- ... existing callback code ...
-    end
-})
-
--- Stage 6 Completion
-MainTab:Section({ Title = "Stage 6 Completion" })
-
-MainTab:Button({
-    Title = "Auto Complete Stage 6",
-    Desc = "Teleports you to the finish line",
-    Callback = function()
-        -- ... existing callback code ...
-    end
-})
-
--- Teleport Options
-MainTab:Section({ Title = "Teleport Options" })
-
-MainTab:Button({
-    Title = "Teleport to Key",
-    Desc = "Teleports you to the key location",
-    Callback = function()
-        -- ... existing callback code ...
-    end
-})
-
-MainTab:Button({
-    Title = "Teleport to Safe",
-    Desc = "Teleports you to the safe location",
-    Callback = function()
-        -- ... existing callback code ...
-    end
-})
-
-MainTab:Button({
-    Title = "Teleport to Ofuda Box",
-    Desc = "Teleports you to the Ofuda Box location",
-    Callback = function()
-        -- ... existing callback code ...
-    end
-})
-
-notify{
-    Title = "Script Loaded",
-    Content = "Enjoy!",
-    Duration = 5
-}
-
-Window:SelectTab(1)
 
 -- Helper function to create compatible notifications
 local function notify(args)
@@ -639,6 +349,50 @@ local function notify(args)
         Time = args.Duration or 3
     })
 end
+
+-- Initialize the original system
+local GameState = workspace.Values
+
+local CurrentRunningFeature = nil
+local GameChangedConnection = nil
+
+local Features = {
+    ["RedLightGreenLight"] = RedLightGreenLight,
+    ["Dalgona"] = Dalgona,
+    ["TugOfWar"] = TugOfWar,
+    ["GlassBridge"] = GlassBridge
+}
+
+local function CleanupCurrentFeature()
+    if CurrentRunningFeature then
+        CurrentRunningFeature:Destroy()
+        CurrentRunningFeature = nil
+    end
+end
+
+local function CurrentGameChanged()
+    warn("Current game: " .. GameState.CurrentGame.Value)
+    
+    CleanupCurrentFeature()
+    
+    local Feature = Features[GameState.CurrentGame.Value]
+    if not Feature then return end
+
+    CurrentRunningFeature = Feature.new(Window)
+    CurrentRunningFeature:Start()
+end
+
+-- Setup connections
+GameChangedConnection = GameState.CurrentGame:GetPropertyChangedSignal("Value"):Connect(CurrentGameChanged)
+CurrentGameChanged()
+
+notify{
+    Title = "Script Loaded",
+    Content = "Enjoy!",
+    Duration = 5
+}
+
+Window:SelectTab(1)
 
 -- @class RedLightGreenLight
 local RedLightGreenLight = {}
