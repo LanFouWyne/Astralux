@@ -388,8 +388,8 @@ CurrentGameChanged()
 
 notify{
     Title = "Script Loaded",
-    Content = "Enjoy!",
-    Duration = 5
+    Content = "Script by Jorsan, enjoy!",
+    Duration = 4
 }
 
 Window:SelectTab(1)
@@ -630,17 +630,14 @@ function UIManager.new()
     self.IsDestroyed = false
 
     -- Load and initialize the UI
-    self:_LoadLibrary()
+    self._Library = Library -- Use the already loaded Astralux UI library
+    self._Window = Window -- Use the already created window
     
     self.Toggles = getgenv().Toggles
     self.Options = getgenv().Options
-
-    self:_CreateWindow()
-    self:_SetupTabs()
     
     self._Maid:GiveTask(function()
         self.IsDestroyed = true
-        self._Library:Unload()
         
         -- Clear references
         self._Library = nil
@@ -654,190 +651,6 @@ function UIManager.new()
     end)
     
     return self
-end
-
-function UIManager:_LoadLibrary()
-    self._Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/DarkClpher/RBX-Scripts/refs/heads/main/UI-Libraries/LinoriaUI.luau'))()
-    if not self._Library then
-        error("Failed to load LinoriaLib")
-    end
-end
-
-function UIManager:_CreateWindow()
-    self._Window = self._Library:CreateWindow({
-        Title = "Ink Game Cheats | Script Author: Jorsan | UI Library: Linoria",
-        Center = true,
-        AutoShow = true,
-        TabPadding = 8,
-        MenuFadeTime = 0.2,
-        Size = UDim2.new(0, 500, 0, 400)
-    })
-end
-
-function UIManager:_SetupTabs()
-    -- Create tabs
-    self._Tabs = {
-        Main = self._Window:AddTab("Main"),
-        Player = self._Window:AddTab("Player"),
-        Settings = self._Window:AddTab("Settings")
-    }
-    
-    -- Setup tabs
-    self:_SetupMainCheatsTab()
-    self:_SetupPlayerTab()
-    self:_SetupSettingsTab()
-end
-
-function UIManager:_SetupMainCheatsTab()
-    local GameCheats = self._Tabs.Main:AddLeftGroupbox("Game Features")
-    
-    -- Red Light Green Light God Mode
-    GameCheats:AddToggle("RedLightGodMode", {
-        Text = "Red Light God Mode",
-        Default = false,
-        Tooltip = "Prevents you from being eliminated during Red Light Green Light"
-    })
-    
-    -- Glass Bridge ESP
-    GameCheats:AddToggle("GlassBridgeESP", {
-        Text = "Glass Bridge ESP",
-        Default = false,
-        Tooltip = "Shows which glass panels are safe to step on"
-    })
-    
-    -- Tug of War Auto Pull
-    GameCheats:AddToggle("TugOfWarAuto", {
-        Text = "Tug of War Auto Pull",
-        Default = false,
-        Tooltip = "Automatically pulls during Tug of War game"
-    })
-    
-    -- Dalgona Auto Complete
-    GameCheats:AddToggle("DalgonaAuto", {
-        Text = "Dalgona Auto Complete",
-        Default = false,
-        Tooltip = "Automatically completes the Dalgona cookie challenge"
-    })
-    
-    -- Add divider and status
-    GameCheats:AddDivider()
-    GameCheats:AddLabel("Status: Ready")
-end
-
-function UIManager:_SetupPlayerTab()
-    local PlayerSettings = self._Tabs.Player:AddLeftGroupbox("Player Modifications")
-
-    -- NoClip Toggle
-    PlayerSettings:AddToggle("EnableWalkSpeed", {
-        Text = "Enable WalkSpeed",
-        Default = false
-    })
-
-    -- WalkSpeed Changer
-    PlayerSettings:AddSlider("WalkSpeed", {
-        Text = "Walk Speed",
-        Default = 16,
-        Min = 1,
-        Max = 100,
-        Rounding = 0,
-        Compact = false,
-        Suffix = " studs/s"
-    })
-
-    -- Add divider
-    PlayerSettings:AddDivider()
-
-    -- NoClip Toggle
-    PlayerSettings:AddToggle("Noclip", {
-        Text = "Noclip",
-        Default = false,
-        Tooltip = "Walk through walls"
-    })
-
-    -- Setup character cheats
-    local Client = Players.LocalPlayer
-    local CharacterMaid = Maid.new()
-
-    self._Maid:GiveTask(CharacterMaid)
-
-    local function OnCharacterAdded(Character)
-        CharacterMaid:DoCleaning()
-        local Humanoid = Character:WaitForChild("Humanoid")
-        
-        local CachedBaseParts = {}
-        for _, Object in ipairs(Character:GetDescendants()) do
-            if Object:IsA("BasePart") then
-                table.insert(CachedBaseParts, Object)
-            end
-        end
-
-        CharacterMaid:GiveTask(Character.DescendantAdded:Connect(function(Descendant)
-            if Descendant:IsA("BasePart") then
-                table.insert(CachedBaseParts, Descendant)
-            end
-        end))
-        
-        local function ChangeWalkSpeed()
-            if not self:GetToggleValue("EnableWalkSpeed") then return end
-            local NewWalkSpeed = self:GetOptionValue("WalkSpeed")
-            if not NewWalkSpeed then return end
-        
-            Humanoid.WalkSpeed = NewWalkSpeed
-        end
-        
-        CharacterMaid:GiveTask(Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(ChangeWalkSpeed))
-
-        local NoclippedBaseParts = {}
-        CharacterMaid:GiveTask(RunService.Stepped:Connect(function()
-            if not self:GetToggleValue("Noclip") then
-                for BasePart, _ in NoclippedBaseParts do
-                    NoclippedBaseParts[BasePart] = nil
-                    BasePart.CanCollide = true
-                end
-                return
-            end
-
-            for _, BasePart in ipairs(CachedBaseParts) do
-                if BasePart.CanCollide then
-                    NoclippedBaseParts[BasePart] = true
-                    BasePart.CanCollide = false
-                end
-            end
-        end))
-        
-        CharacterMaid:GiveTask(function()
-            for BasePart, _ in NoclippedBaseParts do
-                NoclippedBaseParts[BasePart] = nil
-                BasePart.CanCollide = true
-            end
-        end)
-
-        self.Toggles.EnableWalkSpeed:OnChanged(ChangeWalkSpeed)
-        self.Options.WalkSpeed:OnChanged(ChangeWalkSpeed)
-    end
-
-    self._Maid:GiveTask(function()
-        self.Toggles.EnableWalkSpeed:OnChanged(function() end)
-        self.Options.WalkSpeed:OnChanged(function() end)
-    end)
-    
-    self._Maid:GiveTask(Client.CharacterAdded:Connect(OnCharacterAdded))
-    
-    if Client.Character then
-        task.spawn(OnCharacterAdded, Client.Character)
-    end
-end
-
-function UIManager:_SetupSettingsTab()
-    local MenuSettings = self._Tabs.Settings:AddLeftGroupbox("Menu Settings")
-    
-    MenuSettings:AddButton({
-        Text = "Unload/Destroy Script",
-        Func = function()
-            self:Destroy()
-        end,
-        Tooltip = "Completely removes and destroys the script"
-    })
 end
 
 function UIManager:GetToggleValue(ToggleName)
@@ -856,8 +669,12 @@ function UIManager:GetOptionValue(OptionName)
 end
 
 function UIManager:Notify(Text, Duration)
-    if not self._Library then return end
-    self._Library:Notify(Text, Duration)
+    if not self._Window then return end
+    self._Window:Notify({
+        Title = "Notification",
+        Desc = Text,
+        Time = Duration or 3
+    })
 end
 
 function UIManager:Destroy()
