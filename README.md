@@ -314,9 +314,6 @@ A: It depends on the script. Some may conflict with Astralux.
 **Q: The script stopped working after update?**
 A: Check for updates on this repository. Game updates may break the script.
 
-**Q: Can I modify this script?**
-A: Yes! Feel free to fork and modify for personal use.
-
 **Q: How do I report bugs?**
 A: Open an issue on GitHub with detailed information.
 
@@ -364,7 +361,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Developer:** LanFouWyne
 - **UI Library:** [Fluent Renewed](https://github.com/ActualMasterOogway/Fluent-Renewed)
-- **Game:** Pet-a-Pet by Roblox
+- **Game:** PetaPeta
 
 ---
 
@@ -372,7 +369,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 🐛 **Bug Reports:** [Open an Issue](../../issues)
 - 💡 **Feature Requests:** [Open an Issue](../../issues)
-- 💬 **Discussions:** [GitHub Discussions](../../discussions)
 
 ---
 
