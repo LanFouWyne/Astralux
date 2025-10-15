@@ -50,7 +50,7 @@
 ### Method 1: Direct Load (Recommended)
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/LanFouWyne/Astralux/main/petapeta.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LanFouWyne/Astralux/refs/heads/main/Astralux-protected.lua"))()"))()
 ```
 
 ### Method 2: Manual Load
